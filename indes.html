@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mini Monopoly - Nadia</title>
+<style>
+  :root{
+    --bg:#efe6d7;
+    --panel:#f7f3ea;
+    --accent:#222;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:"Segoe UI", Roboto, Arial, sans-serif;
+    background:var(--bg);
+    color:var(--accent);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    padding:10px;
+    min-height:100vh;
+  }
+
+  h1{
+    margin:0;
+    font-size:20px;
+    letter-spacing:1px;
+    text-align:center;
+  }
+
+  .container{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    width:100%;
+  }
+
+  /* plateau */
+  #boardWrap{
+    background:#ddd;
+    padding:8px;
+    border-radius:8px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.12);
+  }
+  #board{
+    position:relative;
+    width:320px;
+    height:320px;
+    background: url("board.png") center/cover no-repeat;
+    border-radius:6px;
+    overflow:visible;
+  }
+
+  /* joueurs (images visibles) */
+  .player {
+    position:absolute;
+    width:36px;
+    height:36px;
+    transform:translate(-50%,-50%);
+    transition: left 0.6s cubic-bezier(.2,.9,.2,1),
+                top 0.6s cubic-bezier(.2,.9,.2,1),
+                transform 0.25s;
+    z-index:30;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .player img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:6px;
+    border:2px solid rgba(255,255,255,0.9);
+    box-shadow:0 3px 8px rgba(0,0,0,0.25);
+    background:#fff;
+  }
+  .player:active{ transform: translate(-50%,-50%) scale(0.97); }
+
+  /* panneau info / contrôles */
+  .panel{
+    width:100%;
+    max-width:360px;
+    background:var(--panel);
+    padding:10px;
+    border-radius:10px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .controls{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  button{
+    background:#ffcf3f;
+    border:none;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:700;
+    color:#0b0b0b;
+    box-shadow:0 3px 6px rgba(0,0,0,0.12);
+    font-size:14px;
+  }
+  button:active{ transform:translateY(1px); }
+
+  .infoBox{
+    background:white;
+    padding:6px 8px;
+    border-radius:6px;
+    color:#111;
+    font-weight:600;
+    font-size:14px;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.03);
+  }
+
+  .wallet{
+    display:flex; 
+    gap:6px; 
+    flex-direction:column;
+  }
+  .wallet div{ font-size:14px; }
+
+  .deckButtons{
+    display:flex; 
+    gap:6px; 
+    flex-direction:column;
+  }
+
+  .message{
+    min-height:40px;
+    padding:6px 8px;
+    background:#fff;
+    color:#111;
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    font-weight:700;
+    font-size:14px;
+  }
+
+  /* popup carte */
+  .cardModal{
+    position:fixed;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%) scale(0.95);
+    min-width:260px;
+    max-width:90%;
+    background:#fff;
+    color:#111;
+    padding:12px;
+    border-radius:10px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.35);
+    z-index:200;
+    display:none;
+  }
+  .cardModal.show{ display:block; }
+  .cardModal h3{ margin:0 0 6px 0; font-size:16px; }
+  .cardModal p{ margin:0 0 8px 0; font-size:14px; }
+  .cardModal button{ width:100%; font-size:14px; }
+
+  /* footer mini */
+  .footer{
+    margin-top:4px;
+    font-size:11px;
+    opacity:0.85;
+    text-align:center;
+  }
+
+  /* propriétés achetées en bas du panneau */
+  .ownedProps{
+    margin-top:6px;
+    font-size:12px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+  }
+  .ownedProps div{
+    background:#fff;
+    padding:2px 4px;
+    border-radius:4px;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.03);
+  }
+
+  @media(max-width:400px){
+    #board{ width:280px; height:280px; }
+    .player{ width:28px; height:28px; }
+    .panel{ max-width:280px; }
+  }
+#board {
+  width: 300px;
+  height: 300px;
+  background-image: url('haadi.PNG');
+  background-size: cover;   /* ou 'contain' si tu veux voir tout le plateau */
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.player {
+  width:25px;   /* largeur du joueur */
+  height:25px;  /* hauteur du joueur */
+}
+
+.player img {
+  width:100%;
+  height:100%;
+  border-radius:4px; /* coins légèrement arrondis */
+}
+h1 {
+  font-family: 'Orbitron', sans-serif; /* police futuriste */
+  font-size: 20px;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 2px;
+  color: #fff; /* couleur de base blanche */
+  text-shadow:
+    0 0 3px #191818,
+    0 0 6px #151515,
+    0 0 12px #131313,
+    0 0 24px #0d0d0d,
+    0 0 36px #131313;
+  margin-bottom: 20px;
+  transition: 0.5s;
+  cursor: default;
+}
+
+/* effet léger de pulsation/glow */
+@keyframes neonGlow {
+  0% {
+    text-shadow:
+      0 0 3px #ee1a1a,
+      0 0 6px #db2727,
+      0 0 12px #f71c1c,
+      0 0 24px #ee1d1d,
+      0 0 36px #f02323;
+  }
+  50% {
+    text-shadow:
+      0 0 6px #fa2222,
+      0 0 12px #ed1717,
+      0 0 18px #dc1a1a,
+      0 0 30px #f52222,
+      0 0 42px #ea2020;
+  }
+  100% {
+    text-shadow:
+      0 0 3px rgb(23, 23, 23)
+      0 0 6px #040404,
+      0 0 12px #0c0c0c,
+      0 0 24px #0f0f0f,
+      0 0 36px #171616;
+  }
+}
+
+h1 {
+  animation: neonGlow 1s infinite alternate;
+}
+
+</style>
+</head>
+<body>
+
+<h1>Monopoly 3emrek tnsah</h1>
+
+<div class="container">
+  <div id="boardWrap">
+    <div id="board">
+      <div class="player" id="player1"><img src="lamrani.png" alt="Joueur 1"></div>
+      <div class="player" id="player2"><img src="hajji.png" alt="Joueur 2"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <button id="btnRoll">Lu7 3lya dik 🎲</button>
+      <div style="flex:1;margin-left:6px">
+        <div class="infoBox" id="turnBox">Dawr dyalmen : Lamrani</div>
+        <div style="font-size:11px;color:#3a3a3a;margin-top:4px">Brek 3la 🎲 bax tzid</div>
+      </div>
+    </div>
+
+    <div class="wallet">
+      <div class="infoBox">Floss yahabibi</div>
+      <div style="display:flex;gap:6px;justify-content:space-between">
+        <div class="infoBox" id="money1">Lamrani : 1500 €</div>
+        <div class="infoBox" id="money2">Hajji : 1500 €</div>
+      </div>
+    </div>
+
+    <div class="deckButtons">
+      <div style="display:flex;gap:6px">
+        <button id="btnChance">Carta dyal zehrek</button>
+        <button id="btnCommunity">Carta dyal communaute</button>
+      </div>
+      <div class="message" id="mainMessage">Wajed ? iwa bze3ta</div>
+    </div>
+
+    <div class="ownedProps" id="ownedProps"></div>
+  </div>
+</div>
+
+<div class="cardModal" id="cardModal">
+  <h3 id="cardTitle">Carta</h3>
+  <p id="cardText">walu</p>
+  <button id="closeCard">ssed</button>
+</div>
+
+<div class="footer">A sferte7 La rbe7ti</div>
+  
+<script>
+// --- récupérer éléments DOM ---
+const board = document.getElementById('board');
+const btnRoll = document.getElementById('btnRoll');
+const btnChance = document.getElementById('btnChance');
+const btnCommunity = document.getElementById('btnCommunity');
+const mainMessage = document.getElementById('mainMessage');
+const turnBox = document.getElementById('turnBox');
+const money1 = document.getElementById('money1');
+const money2 = document.getElementById('money2');
+const cardModal = document.getElementById('cardModal');
+const cardTitle = document.getElementById('cardTitle');
+const cardText = document.getElementById('cardText');
+const closeCard = document.getElementById('closeCard');
+
+const p1 = document.getElementById('player1');
+const p2 = document.getElementById('player2');
+
+// --- joueurs ---
+const players = [
+  { el: p1, name: "Joueur 1", pos: 0, money: 1500, owned: [] },
+  { el: p2, name: "Joueur 2", pos: 0, money: 1500, owned: [] }
+];
+
+let current = 0; // index du joueur courant
+
+// --- cases simplifiées ---
+const cases = new Array(40).fill(null).map((_,i)=>{
+  let type='property', name='Propriété '+i, price=100 + (i%10)*20;
+  if(i===0){ type='go'; name='Départ'; price=0; }
+  if([2,17,33].includes(i)){ type='community'; name='Caisse Communauté'; price=0;}
+  if([7,22,36].includes(i)){ type='chance'; name='Chance'; price=0;}
+  if(i===10){ type='jail'; name='Visite Prison'; price=0; }
+  if(i===30){ type='gotojail'; name='Allez en Prison'; price=0; }
+  return { idx:i, type, name, price, owner:null };
+});
+
+// --- utilitaires ---
+function getBoardSize(){
+  const rect = board.getBoundingClientRect();
+  return { w: rect.width, h: rect.height };
+}
+
+function computeCoords(){
+  const { w, h } = getBoardSize();
+  const margin = 20;
+  const steps = 11;
+  const cellW = (w - 2*margin)/steps;
+  const cellH = (h - 2*margin)/steps;
+
+  const coords = [];
+  // bas
+  for(let i=0;i<10;i++) coords.push([ w - margin - i*cellW - cellW/2, h - margin/2 ]);
+  // gauche
+  for(let i=0;i<10;i++) coords.push([ margin/2, h - margin - i*cellH - cellH/2 ]);
+  // haut
+  for(let i=0;i<10;i++) coords.push([ margin + i*cellW + cellW/2, margin/2 ]);
+  // droite
+  for(let i=0;i<10;i++) coords.push([ w - margin/2, margin + i*cellH + cellH/2 ]);
+  return coords;
+}
+
+let coords = computeCoords();
+window.addEventListener('resize', ()=>{ coords = computeCoords(); placePlayers(); });
+
+// --- affichage ---
+function refreshUI(){
+  turnBox.textContent = `Tour : ${players[current].name}`;
+  money1.textContent = `Joueur 1 : ${players[0].money} €`;
+  money2.textContent = `Joueur 2 : ${players[1].money} €`;
+
+  // afficher propriétés achetées
+  const ownedDiv = document.getElementById('ownedProps');
+  ownedDiv.innerHTML = '';
+  players.forEach(p=>{
+    p.owned.forEach(idx=>{
+      const c = cases[idx];
+      const el = document.createElement('div');
+      el.textContent = `${p.name}: ${c.name}`;
+      ownedDiv.appendChild(el);
+    });
+  });
+}
+
+// --- placement joueurs ---
+function placePlayers(){
+  coords = computeCoords();
+  const offsets = [
+    { x:-12, y:-12 },
+    { x:12, y:12 }
+  ];
+  for(let i=0;i<players.length;i++){
+    const p = players[i];
+    const c = coords[p.pos % 40];
+    if(!c) continue;
+    p.el.style.left = (c[0] + offsets[i].x) + 'px';
+    p.el.style.top = (c[1] + offsets[i].y) + 'px';
+  }
+}
+
+// --- achat et loyer ---
+function tryBuyProperty(playerIdx){
+  const p = players[playerIdx];
+  const c = cases[p.pos];
+  if(c.type === 'property' && c.owner === null){
+    if(p.money >= c.price){
+      p.money -= c.price;
+      c.owner = p.name;
+      p.owned.push(c.idx);
+      mainMessage.textContent = `${p.name} a acheté ${c.name} pour ${c.price} €`;
+    } else {
+      mainMessage.textContent = `${p.name} n'a pas assez pour acheter ${c.name}`;
+    }
+  } else if(c.type === 'property' && c.owner && c.owner !== p.name){
+    const rent = Math.max(10, Math.floor(c.price*0.2));
+    p.money -= rent;
+    const ownerPlayer = players.find(pl => pl.name === c.owner);
+    if(ownerPlayer) ownerPlayer.money += rent;
+    mainMessage.textContent = `${p.name} paie ${rent} € de loyer à ${c.owner}`;
+  }
+}
+
+// --- atterrissage ---
+function handleLanding(playerIdx){
+  const p = players[playerIdx];
+  const c = cases[p.pos];
+  if(c.type==='go'){ p.money+=200; mainMessage.textContent=`${p.name} passe Départ et reçoit 200 €`; }
+  else if(c.type==='gotojail'){ p.pos=10; placePlayers(); mainMessage.textContent=`${p.name} va en Prison !`; }
+  else if(c.type==='chance'){ drawChance(playerIdx); }
+  else if(c.type==='community'){ drawCommunity(playerIdx); }
+  else if(c.type==='jail'){ mainMessage.textContent=`${p.name} est en visite à la prison.`; }
+  else{ tryBuyProperty(playerIdx); }
+  refreshUI();
+}
+
+// --- cartes ---
+const chanceDeck = [
+  { title:"Chance", text:"Avancez de 3 cases", action:pl=>{ pl.pos=(pl.pos+3)%40; placePlayers(); handleLanding(players.indexOf(pl)); } },
+  { title:"Chance", text:"Recevez 100 €", action:pl=>{ pl.money+=100; refreshUI(); } },
+  { title:"Chance", text:"Perdez 50 €", action:pl=>{ pl.money-=50; refreshUI(); } },
+  { title:"Chance", text:"Allez à Départ", action:pl=>{ pl.pos=0; placePlayers(); handleLanding(players.indexOf(pl)); } }
+];
+const communityDeck = [
+  { title:"Communauté", text:"Recevez 50 €", action:pl=>{ pl.money+=50; refreshUI(); } },
+  { title:"Communauté", text:"Amende: payez 50 €", action:pl=>{ pl.money-=50; refreshUI(); } },
+  { title:"Communauté", text:"Réparez vos maisons: payez 40 €", action:pl=>{ pl.money-=40; refreshUI(); } }
+];
+
+function drawChance(playerIdx){
+  const card = chanceDeck[Math.floor(Math.random()*chanceDeck.length)];
+  showCard(card.title, card.text);
+  setTimeout(()=>{ card.action(players[playerIdx]); refreshUI(); }, 200);
+}
+function drawCommunity(playerIdx){
+  const card = communityDeck[Math.floor(Math.random()*communityDeck.length)];
+  showCard(card.title, card.text);
+  setTimeout(()=>{ card.action(players[playerIdx]); refreshUI(); }, 200);
+}
+
+// --- modal cartes ---
+function showCard(title,text){
+  cardTitle.textContent=title;
+  cardText.textContent=text;
+  cardModal.classList.add('show');
+}
+closeCard.addEventListener('click', ()=>cardModal.classList.remove('show'));
+
+// --- lancer de dé ---
+btnRoll.addEventListener('click', ()=>{
+  const roll = Math.floor(Math.random()*6)+1;
+  mainMessage.textContent=`${players[current].name} a lancé un ${roll} !`;
+  players[current].pos=(players[current].pos+roll)%40;
+  placePlayers();
+  setTimeout(()=>{
+    handleLanding(current);
+    current = (current+1)%players.length;
+    turnBox.textContent=`Tour : ${players[current].name}`;
+  },700);
+});
+
+// --- boutons cartes ---
+btnChance.addEventListener('click', ()=> drawChance(current));
+btnCommunity.addEventListener('click', ()=> drawCommunity(current));
+
+// --- initialisation ---
+window.addEventListener('load', ()=>{
+  placePlayers();
+  refreshUI();
+  mainMessage.textContent="Prêt · Utilise le bouton pour lancer le dé.";
+});
+
+function placePlayers(){
+  coords = computeCoords();
+  const offsets = [
+    { x:-players[0].el.offsetWidth/2, y:-players[0].el.offsetHeight/2 },
+    { x:players[1].el.offsetWidth/2, y:players[1].el.offsetHeight/2 }
+  ];
+  for(let i=0;i<players.length;i++){
+    const p = players[i];
+    const c = coords[p.pos % 40];
+    if(!c) continue;
+    p.el.style.left = (c[0] + offsets[i].x) + 'px';
+    p.el.style.top  = (c[1] + offsets[i].y) + 'px';
+  }
+}
+
+</script>
+
+</body>
+</html>
